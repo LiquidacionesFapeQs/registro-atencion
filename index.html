@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Viaje y Atenciones</title>
+    <!-- Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Define la fuente predeterminada para el cuerpo */
+        body { font-family: 'Inter', sans-serif; }
+        /* Establece la altura máxima y el desbordamiento para el contenedor del historial */
+        .historial-container { max-height: 400px; overflow-y: auto; }
+        /* Estilos para el spinner de carga */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db; /* Color del spinner */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite; /* Animación de rotación */
+        }
+        /* Definición de la animación para el spinner */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform : rotate(360deg); }
+        }
+        /* Estilo para inputs deshabilitados en la sección de info */
+        .info-input:disabled {
+            background-color: #f3f4f6; /* bg-gray-100 */
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 sm:p-6 md:p-8">
+
+    <div class="max-w-7xl mx-auto bg-white shadow-lg rounded-xl p-6 sm:p-8 md:p-10">
+
+        <header class="mb-8 border-b pb-4 border-gray-200">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Panel de Control de Viaje</h1>
+            <p class="text-gray-600">Busca un viaje para visualizar su historial y registrar nuevas atenciones.</p>
+        </header>
+
+        <!-- Sección de Búsqueda -->
+        <section class="bg-gray-50 p-6 rounded-xl shadow-md border border-gray-200 mb-8">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-gray-700"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Buscar Viaje
+            </h2>
+            <div id="search-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label for="search-by" class="block text-sm font-medium text-gray-700 mb-1">Buscar por</label>
+                    <select id="search-by" name="search-by" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="n_viaje">Nº Viaje</option>
+                        <option value="n_documento">Nº Documento</option>
+                        <option value="n_pedido">Nº Pedido</option>
+                        <option value="cliente_final">Nº Entrega</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="search-value" class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                    <input type="text" id="search-value" name="search-value" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ingrese el valor a buscar...">
+                </div>
+                <button id="search-button" class="w-full md:w-auto flex justify-center items-center bg-blue-600 text-white py-2.5 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Buscar
+                    <div id="search-btn-loader" class="loader ml-2 hidden"></div>
+                </button>
+            </div>
+            <div id="search-feedback" class="mt-4 text-center"></div>
+        </section>
+
+        <!-- Sección Superior: Información y Registro -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-8">
+
+            <!-- Columna Izquierda: Información de Viaje -->
+            <div id="tripInfoSection" class="lg:col-span-2 bg-gray-50 p-6 rounded-xl shadow-md border border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-gray-200 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-blue-600"><path d="M19 18h-2a4 4 0 0 0-4-4h-2a4 4 0 0 0-4 4H5"/><path d="M5 18v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="m21.44 11.05-1.28-1.27a1 1 0 0 0-1.42 0l-9.19 9.19a1 1 0 0 0 0 1.41l1.28 1.28a1 1 0 0 0 1.41 0l9.2-9.19a1 1 0 0 0 0-1.42Z"/></svg>
+                    Información de Viaje
+                </h2>
+                <div id="trip-info-content" class="space-y-4 hidden">
+                    <div class="info-item"><p class="text-sm font-medium text-gray-500">Nº Viaje</p><p id="info-n-viaje" class="text-md font-semibold text-gray-900">-</p></div>
+                    <div class="info-item"><p class="text-sm font-medium text-gray-500">Transporte</p><p id="info-transporte" class="text-md font-semibold text-gray-900">-</p></div>
+                    <div class="info-item"><p class="text-sm font-medium text-gray-500">Placa</p><p id="info-placa" class="text-md font-semibold text-gray-900">-</p></div>
+                    <div class="info-item"><p class="text-sm font-medium text-gray-500">Fec. Salida</p><p id="info-fecha-salida" class="text-md font-semibold text-gray-900">-</p></div>
+                    <div class="info-item"><p class="text-sm font-medium text-gray-500">Canal</p><p id="info-canal" class="text-md font-semibold text-gray-900">-</p></div>
+                </div>
+                <div id="trip-info-placeholder" class="text-center py-8 text-gray-500">
+                    <p>Busque y seleccione un viaje para ver su información.</p>
+                </div>
+                <div id="trip-info-loader" class="flex justify-center items-center py-4 hidden">
+                    <div class="loader"></div>
+                    <span class="ml-2 text-gray-600">Cargando información del viaje...</span>
+                </div>
+                <div id="trip-info-error" class="mt-4 text-sm font-medium text-red-600 hidden"></div>
+            </div>
+
+            <!-- Columna Derecha: Registrar Atención -->
+            <fieldset id="attention-fieldset" class="lg:col-span-3 bg-gray-50 p-6 rounded-xl shadow-md border border-gray-200" disabled>
+                <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-gray-200 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-green-600"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Registrar Atención
+                </h2>
+                <form id="attention-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Campos obligatorios del formulario de atención (ahora primeros) -->
+                        <div>
+                            <label for="tipo-registro" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Registro</label>
+                            <select id="tipo-registro" name="tipo-registro" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                                <option value="">Seleccione un tipo</option>
+                                <option value="Observado">Observado</option>
+                                <option value="Atención">Atención</option>
+                                <option value="Seguimiento">Seguimiento</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="motivo" class="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
+                            <select id="motivo" name="motivo" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                                <option value="">Seleccione un motivo</option>
+                                <option value="Anulado">Anulado</option><option value="Doble Summary">Doble Summary</option><option value="Doc.En transito">Doc.En transito</option><option value="Entrega Incompleta">Entrega Incompleta</option><option value="Error Datos de Transp.">Error Datos de Transp.</option><option value="Error Escaneo">Error Escaneo</option><option value="Error Sistema">Error Sistema</option><option value="Factura Retenida">Factura Retenida</option><option value="Incidencia en Viaje">Incidencia en Viaje</option><option value="Logist.Inv.">Logist.Inv.</option><option value="No despachado">No despachado</option><option value="No se ubica en Sistema">No se ubica en Sistema</option><option value="Nota de Credito">Nota de Credito</option><option value="Recojo Incompleto">Recojo Incompleto</option><option value="Reeditado En Proceso">Reeditado En Proceso</option><option value="Regularizar Fact.">Regularizar Fact.</option><option value="Siniestro">Siniestro</option><option value="Sistema">Sistema</option><option value="Traslado Interno">Traslado Interno</option><option value="Devoluciones par">Devoluciones par</option><option value="devo total">devo total</option><option value="reclamos">reclamos</option><option value="Resolución">Resolución</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="area-responsable" class="block text-sm font-medium text-gray-700 mb-1">Área Responsable</label>
+                            <select id="area-responsable" name="area-responsable" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                                <option value="">Seleccione un área</option>
+                                <option value="TI">TI</option><option value="Proyectos">Proyectos</option><option value="Despacho FP">Despacho FP</option><option value="Despacho QS">Despacho QS</option><option value="Programación">Programación</option><option value="Ejecución">Ejecución</option><option value="Liquidaciones">Liquidaciones</option><option value="Supplay te ayuda">Supplay te ayuda</option><option value="APP PH">APP PH</option><option value="Cliente">Cliente</option><option value="Transportista">Transportista</option><option value="Log. Inversa">Log. Inversa</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="estado" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                            <select id="estado" name="estado" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                                <option value="">Seleccione un estado</option>
+                                <option value="Abierto">Abierto</option>
+                                <option value="Cerrado">Cerrado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="liquidador" class="block text-sm font-medium text-gray-700 mb-1">Liquidador</label>
+                            <select id="liquidador" name="liquidador" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                                <option value="">Seleccione un liquidador</option>
+                                <option value="Luis">Luis</option><option value="Joel">Joel</option><option value="Darwin">Darwin</option><option value="Fabian">Fabian</option><option value="Dirk">Dirk</option><option value="Adrian">Adrian</option>
+                            </select>
+                        </div>
+                        <!-- Campos no obligatorios (ahora después de los obligatorios) -->
+                        <div>
+                            <label for="form-n-documento" class="block text-sm font-medium text-gray-700 mb-1">N° Documento</label>
+                            <input type="text" id="form-n-documento" name="n_documento" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="N° Documento">
+                        </div>
+                        <div>
+                            <label for="form-n-pedido" class="block text-sm font-medium text-gray-700 mb-1">N° Pedido</label>
+                            <input type="text" id="form-n-pedido" name="n_pedido" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="N° Pedido">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="form-cliente" class="block text-sm font-medium text-gray-700 mb-1">Nº Entrega</label>
+                            <input type="text" id="form-cliente" name="cliente_final" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="N° de Entrega">
+                        </div>
+                    </div>
+                    <!-- Detalle (último) -->
+                    <div>
+                        <label for="detalle" class="block text-sm font-medium text-gray-700 mb-1">Más Detalle</label>
+                        <textarea id="detalle" name="detalle" rows="3" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <!-- Botón de Registro -->
+                    <div>
+                        <button type="submit" id="submit-attention" class="w-full flex justify-center items-center bg-green-600 text-white py-2.5 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            <span id="submit-btn-text">Registrar</span>
+                            <div id="submit-btn-loader" class="loader hidden"></div>
+                        </button>
+                    </div>
+                </form>
+                <div id="form-feedback" class="mt-4 text-center"></div>
+            </fieldset>
+        </div>
+
+        <!-- Sección Inferior: Historial -->
+        <section id="historySection" class="bg-gray-50 p-6 rounded-xl shadow-md border border-gray-200 hidden">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                <h2 class="text-xl font-semibold flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-purple-600"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                    Historial de Atenciones del Viaje
+                </h2>
+                <div id="historyLoader" class="flex items-center hidden">
+                    <div class="loader"></div>
+                    <span class="ml-2 text-gray-600">Cargando historial...</span>
+                </div>
+            </div>
+            <div class="historial-container">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                            <tr>
+                                <th scope="col" class="px-4 py-3">Fecha Reg.</th>
+                                <th scope="col" class="px-4 py-3">Tipo</th>
+                                <th scope="col" class="px-4 py-3">Motivo</th>
+                                <th scope="col" class="px-4 py-3">Responsable</th>
+                                <th scope="col" class="px-4 py-3">Estado</th>
+                                <th scope="col" class="px-4 py-3">Liquidador</th>
+                                <th scope="col" class="px-4 py-3">Nro Documento</th>
+                                <th scope="col" class="px-4 py-3">Pedido</th>
+                                <th scope="col" class="px-4 py-3">Entrega</th>
+                                <th scope="col" class="px-4 py-3">Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <!-- Las filas del historial se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="empty-history" class="text-center py-8 text-gray-500 hidden">
+                <p>No hay atenciones registradas para el viaje seleccionado.</p>
+            </div>
+            <div id="historyErrorMessage" class="mt-4 text-sm font-medium text-red-600 hidden"></div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // URLs de las hojas de cálculo
+            const TRIPS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlsM_gEij5rFF4LgCvks8-bYAmrsBz31zI-Id8p65tL6VjYayFCtg-KktG-uus35diAq5Gw6J8zV5y/pubhtml?gid=697719629&single=true';
+            const HISTORY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTlsM_gEij5rFF4LgCvks8-bYAmrsBz31zI-Id8p65tL6VjYayFCtg-KktG-uus35diAq5Gw6J8zV5y/pubhtml?gid=1892325527&single=true';
+            // URL de Apps Script (mantener la misma si ya está desplegada y funcionando)
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxfD3ZeDn8myj2YJyd6LEvLi-ON0sYOTNpmo9yJcefZwR0vgIYVczrJuODdxbYpP8Qe/exec';
+
+            // Referencias a elementos del DOM
+            const searchBySelect = document.getElementById('search-by');
+            const searchValueInput = document.getElementById('search-value');
+            const searchButton = document.getElementById('search-button');
+            const searchBtnLoader = document.getElementById('search-btn-loader');
+            const searchFeedback = document.getElementById('search-feedback');
+
+            const tripInfoSection = document.getElementById('tripInfoSection');
+            const tripInfoContent = document.getElementById('trip-info-content');
+            const tripInfoPlaceholder = document.getElementById('trip-info-placeholder');
+            const infoNViaje = document.getElementById('info-n-viaje');
+            const infoTransporte = document.getElementById('info-transporte');
+            const infoPlaca = document.getElementById('info-placa');
+            const infoFechaSalida = document.getElementById('info-fecha-salida');
+            const infoCanal = document.getElementById('info-canal'); 
+            const tripInfoLoader = document.getElementById('trip-info-loader');
+            const tripInfoError = document.getElementById('trip-info-error');
+
+            const attentionFieldset = document.getElementById('attention-fieldset');
+
+            const attentionForm = document.getElementById('attention-form');
+            const formNDocumento = document.getElementById('form-n-documento');
+            const formNPedido = document.getElementById('form-n-pedido');
+            const formCliente = document.getElementById('form-cliente');
+            const tipoRegistroSelect = document.getElementById('tipo-registro');
+            const motivoSelect = document.getElementById('motivo');
+            const areaResponsableSelect = document.getElementById('area-responsable');
+            const estadoSelect = document.getElementById('estado');
+            const liquidadorSelect = document.getElementById('liquidador');
+            const detalleTextarea = document.getElementById('detalle');
+            const submitAttentionButton = document.getElementById('submit-attention');
+            const submitBtnText = document.getElementById('submit-btn-text');
+            const submitBtnLoader = document.getElementById('submit-btn-loader');
+            const formFeedback = document.getElementById('form-feedback');
+
+            const historySection = document.getElementById('historySection');
+            const historyTableBody = document.getElementById('history-table-body');
+            const historyLoader = document.getElementById('historyLoader');
+            const emptyHistoryMessage = document.getElementById('empty-history');
+            const historyErrorMessage = document.getElementById('historyErrorMessage');
+
+            let currentTrip = null;
+
+            /**
+             * Muestra un mensaje de feedback (éxito, error, info, carga).
+             */
+            function showFeedback(message, type = 'info', element = searchFeedback) {
+                let colorClass = 'text-gray-500';
+                let content = message;
+                if (type === 'error') colorClass = 'text-red-500';
+                if (type === 'success') colorClass = 'text-green-600';
+                if (type === 'loading') {
+                    content = `<div class="flex items-center justify-center"><div class="loader mr-2"></div><p>${message}</p></div>`;
+                }
+                element.innerHTML = `<div class="${colorClass}">${content}</div>`;
+                element.classList.remove('hidden');
+                if (type !== 'loading') { 
+                    setTimeout(() => {
+                        element.classList.add('hidden');
+                    }, 5000);
+                }
+            }
+
+            /**
+             * Habilita o deshabilita un botón y su loader.
+             */
+            function setButtonLoading(button, loader, isLoading) {
+                if (isLoading) {
+                    button.disabled = true;
+                    loader.classList.remove('hidden');
+                } else {
+                    button.disabled = false;
+                    loader.classList.add('hidden');
+                }
+            }
+
+            /**
+             * Fetches data from a Google Sheet published as HTML, parsing it into an array of objects.
+             * Tries with CORS proxy first, then directly if proxy fails.
+             */
+            async function fetchSheetData(url, headers) {
+                const fetchUrl = `${url.split('?')[0]}?gid=${url.split('gid=')[1].split('&')[0]}&single=true&timestamp=${new Date().getTime()}`;
+                const proxyUrl = 'https://api.allorigins.win/raw?url='; 
+                let response;
+                let htmlText;
+
+                try {
+                    // Intenta con el proxy CORS primero
+                    response = await fetch(`${proxyUrl}${encodeURIComponent(fetchUrl)}`);
+                    if (!response.ok) {
+                        console.warn(`Proxy falló con estado: ${response.status}. Intentando obtener directamente...`);
+                        // Si el proxy falla, intenta obtener directamente (podría ser bloqueado por CORS)
+                        response = await fetch(fetchUrl); 
+                        if (!response.ok) {
+                             throw new Error(`Error en la red (directo): ${response.statusText}`);
+                        }
+                    }
+                    htmlText = await response.text();
+                } catch (error) {
+                    console.error('Error al obtener datos de la hoja (fetchSheetData):', url, error);
+                    throw new Error(`No se pudo cargar la información: ${error.message}.`);
+                }
+                
+                try {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlText, 'text/html');
+                    const rows = doc.querySelectorAll('tbody tr');
+                    
+                    if (rows.length === 0) {
+                        console.warn(`No se encontraron filas en la hoja: ${url}`);
+                        return []; // Retorna un array vacío si no se encuentran filas
+                    }
+
+                    // Registra el contenido de texto sin procesar de las primeras celdas para depurar el mapeo de columnas
+                    console.log("Datos de la hoja en bruto (primera fila después de los encabezados):");
+                    if (rows[1]) { // Verifica si hay una segunda fila (primera fila de datos)
+                        const cells = rows[1].querySelectorAll('td');
+                        cells.forEach((cell, index) => {
+                            console.log(`Celda ${index + 1}: ${cell.textContent.trim()}`);
+                        });
+                    }
+
+                    return Array.from(rows).slice(1).map(row => { 
+                        const cells = row.querySelectorAll('td');
+                        const record = {};
+                        headers.forEach((header, index) => {
+                            // Asegúrate de que la celda exista antes de acceder a textContent
+                            record[header] = cells[index] ? cells[index].textContent.trim() : '';
+                        });
+                        return record;
+                    });
+                } catch (parseError) {
+                    console.error('Error al parsear el HTML de la hoja:', parseError);
+                    throw new Error(`Error al procesar los datos de la hoja: ${parseError.message}.`);
+                }
+            }
+            
+            /**
+             * Actualiza el panel de información del viaje con los datos proporcionados.
+             */
+            function updateTripInfoPanel(tripData) {
+                if (tripData && tripData.n_viaje) {
+                    tripInfoContent.classList.remove('hidden');
+                    tripInfoPlaceholder.classList.add('hidden');
+                    infoNViaje.textContent = tripData.n_viaje || '-';
+                    infoTransporte.textContent = tripData.agencia_transporte || '-'; // Mapea a 'Transporte' de la hoja
+                    infoPlaca.textContent = tripData.placa || '-'; // Mapea a 'Placa' de la hoja
+                    infoFechaSalida.textContent = tripData.fecha_salida || '-'; // Mapea a 'Fec.Salida' de la hoja
+                    infoCanal.textContent = tripData.canal || '-'; // Muestra el valor de 'canal' de la hoja de viajes
+                    tripInfoSection.classList.remove('hidden'); 
+                } else {
+                    tripInfoContent.classList.add('hidden');
+                    tripInfoPlaceholder.classList.remove('hidden');
+                    tripInfoSection.classList.remove('hidden'); 
+                    infoNViaje.textContent = '-';
+                    infoTransporte.textContent = '-';
+                    infoPlaca.textContent = '-';
+                    infoFechaSalida.textContent = '-';
+                    infoCanal.textContent = '-';
+                }
+            }
+
+            /**
+             * Limpia todos los campos de información y formulario, y oculta secciones.
+             */
+            function resetAllUI() {
+                updateTripInfoPanel(null); 
+                attentionForm.reset();
+                formNDocumento.value = '';
+                formNPedido.value = '';
+                formCliente.value = '';
+                attentionFieldset.disabled = true;
+                historyTableBody.innerHTML = '';
+                emptyHistoryMessage.classList.remove('hidden'); 
+                historySection.classList.add('hidden'); 
+                searchFeedback.classList.add('hidden');
+                formFeedback.classList.add('hidden');
+                historyErrorMessage.classList.add('hidden');
+                currentTrip = null; 
+            }
+
+            /**
+             * Carga y renderiza el historial de atenciones.
+             */
+            async function loadHistory(historyToDisplay) { 
+    historyLoader.classList.remove('hidden');
+    emptyHistoryMessage.classList.add('hidden');
+    historyErrorMessage.classList.add('hidden');
+    historyTableBody.innerHTML = ''; 
+
+    try {
+        if (historyToDisplay && historyToDisplay.length > 0) {
+            historyToDisplay.forEach(data => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b hover:bg-gray-50 transition-colors duration-150';
+                row.innerHTML = `
+                    <td class="px-4 py-4">${data.fecha_registro || '-'}</td>
+                    <td class="px-4 py-4 font-medium">${data.tipo_registro || '-'}</td>
+                    <td class="px-4 py-4">${data.motivo || '-'}</td>
+                    <td class="px-4 py-4">${data.area_responsable || '-'}</td>
+                    <td class="px-4 py-4">${data.estado || '-'}</td>
+                    <td class="px-4 py-4">${data.liquidador || '-'}</td>
+                    <td class="px-4 py-4">${data.n_documento || '-'}</td>
+                    <td class="px-4 py-4">${data.n_pedido || '-'}</td>
+                    <td class="px-4 py-4">${data.cliente_final || '-'}</td>
+                    <td class="px-4 py-4 text-gray-500">${data.detalle || '-'}</td>
+                `;
+                historyTableBody.appendChild(row);
+            });
+            emptyHistoryMessage.classList.add('hidden');
+        } else {
+            emptyHistoryMessage.classList.remove('hidden');
+        }
+        historySection.classList.remove('hidden'); 
+    } catch (error) {
+        console.error('Error al cargar historial:', error);
+        showFeedback('No se pudo cargar el historial de atenciones.', 'error', historyErrorMessage);
+        historySection.classList.add('hidden');
+    } finally {
+        historyLoader.classList.add('hidden');
+    }
+}
+
+            /**
+             * Maneja la búsqueda del viaje y actualiza la UI.
+             */
+            async function handleSearch() {
+                const searchByKey = searchBySelect.value;
+                const searchValue = searchValueInput.value.trim();
+
+                if (!searchValue) {
+                    showFeedback('Por favor, ingrese un valor para buscar.', 'error', searchFeedback);
+                    return;
+                }
+
+                resetAllUI(); 
+                setButtonLoading(searchButton, searchBtnLoader, true);
+                showFeedback('Buscando...', 'loading', searchFeedback); 
+                
+                try {
+                    // Encabezados para la hoja BD Viajes, mapeando columnas a nombres lógicos.
+                    // ESTE ORDEN DEBE COINCIDIR EXACTAMENTE CON TU ESTRUCTURA REAL DE COLUMNAS en la hoja "BD_viajes":
+                    // n_viaje (Columna 1), Fec.Salida (Columna 2), Fec.Limite (Columna 3), Indicador (Columna 4),
+                    // Estado (Columna 5), Transporte (Columna 6), Placa (Columna 7), Canal (Columna 8),
+                    // Dias retraso (Columna 9), Sociedad (Columna 10)
+                    const tripHeaders = [
+                        'n_viaje',          // Columna 1 (A)
+                        'fecha_salida',     // Columna 2 (B) - Para Fec.Salida
+                        'fec_limite',       // Columna 3 (C)
+                        'indicador',        // Columna 4 (D)
+                        'estado_viaje',     // Columna 5 (E) - Para Estado
+                        'agencia_transporte', // Columna 6 (F) - Para Transporte
+                        'placa',            // Columna 7 (G) - Placa se mueve a Columna 7
+                        'canal',            // Columna 8 (H) - Canal se mueve a Columna 8
+                        'dias_retraso',     // Columna 9 (I)
+                        'sociedad'          // Columna 10 (J)
+                    ];
+                    // Encabezados para la hoja Historial (se mantienen igual)
+                    const historyHeaders = [
+                        'fecha_registro', 'n_viaje', 'tipo_registro', 'motivo', 
+                        'area_responsable', 'estado', 'liquidador', 'n_documento', 
+                        'n_pedido', 'cliente_final', 'detalle'
+                    ];
+
+                    if (searchByKey === 'n_viaje') {
+                        const allTrips = await fetchSheetData(TRIPS_SHEET_URL, tripHeaders);
+                        const foundTrip = allTrips.find(trip => 
+                            trip.n_viaje && trip.n_viaje.toLowerCase() === searchValue.toLowerCase()
+                        );
+
+                        if (foundTrip) {
+                            currentTrip = foundTrip;
+                            updateTripInfoPanel(foundTrip); 
+                            
+                            formNPedido.value = foundTrip.n_pedido || '';
+                            formCliente.value = foundTrip.cliente_final || ''; 
+
+                            attentionFieldset.disabled = false; 
+                            showFeedback(`Viaje ${foundTrip.n_viaje} cargado exitosamente.`, 'success', searchFeedback);
+                            
+                            const allHistory = await fetchSheetData(HISTORY_SHEET_URL, historyHeaders);
+                            const tripHistory = allHistory.filter(record => record.n_viaje === foundTrip.n_viaje);
+                            await loadHistory(tripHistory); 
+                        } else {
+                            showFeedback(`Viaje no encontrado en BD Viajes. Puede registrar una nueva atención para "${searchValue}".`, 'info', searchFeedback);
+                            const phantomTrip = { n_viaje: searchValue, n_documento: '', n_pedido: '', cliente_final: '' }; 
+                            currentTrip = phantomTrip; 
+                            updateTripInfoPanel(phantomTrip); 
+                            
+                            formNDocumento.value = '';
+                            formNPedido.value = '';
+                            formCliente.value = '';
+
+                            attentionFieldset.disabled = false; 
+                            
+                            const allHistory = await fetchSheetData(HISTORY_SHEET_URL, historyHeaders);
+                            const tripHistory = allHistory.filter(record => record.n_viaje === searchValue);
+                            await loadHistory(tripHistory); 
+                        }
+
+                    } else { // Si la búsqueda no es por n_viaje (es por n_documento, n_pedido, cliente_final)
+                        const allHistory = await fetchSheetData(HISTORY_SHEET_URL, historyHeaders);
+                        
+                        const filteredHistoryRecords = allHistory.filter(record => 
+                            record[searchByKey] && record[searchByKey].toLowerCase() === searchValue.toLowerCase()
+                        );
+
+                        if (filteredHistoryRecords.length > 0) {
+                            await loadHistory(filteredHistoryRecords); 
+
+                            const firstRecordWithTripNumber = filteredHistoryRecords.find(record => record.n_viaje);
+                            
+                            if (firstRecordWithTripNumber && firstRecordWithTripNumber.n_viaje) {
+                                const tripNumberToFetch = firstRecordWithTripNumber.n_viaje;
+                                const allTrips = await fetchSheetData(TRIPS_SHEET_URL, tripHeaders);
+                                const foundTripDetails = allTrips.find(trip => 
+                                    trip.n_viaje && trip.n_viaje.toLowerCase() === tripNumberToFetch.toLowerCase()
+                                );
+                                currentTrip = foundTripDetails || { 
+                                    n_viaje: tripNumberToFetch, 
+                                    n_documento: firstRecordWithTripNumber.n_documento || '' 
+                                }; 
+                                updateTripInfoPanel(currentTrip); 
+                                
+                                formNDocumento.value = filteredHistoryRecords[0].n_documento || '';
+                                formNPedido.value = filteredHistoryRecords[0].n_pedido || '';
+                                formCliente.value = filteredHistoryRecords[0].cliente_final || '';
+
+                                showFeedback(`Historial encontrado para "${searchValue}". Información del viaje cargada.`, 'success', searchFeedback);
+                            } else {
+                                updateTripInfoPanel(null); 
+                                currentTrip = null; 
+                                showFeedback(`Historial encontrado para "${searchValue}". No se encontró Nº Viaje asociado para cargar información de viaje.`, 'info', searchFeedback);
+                            }
+                            attentionFieldset.disabled = false; 
+                        } else {
+                            showFeedback(`No se encontraron registros de historial para "${searchValue}".`, 'info', searchFeedback);
+                            resetAllUI(); 
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Error en handleSearch:', error);
+                    showFeedback('Ocurrió un error al procesar la búsqueda. ' + error.message, 'error', searchFeedback);
+                } finally {
+                    setButtonLoading(searchButton, searchBtnLoader, false);
+                }
+            }
+            
+            // Event Listeners
+            searchButton.addEventListener('click', handleSearch);
+            searchValueInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') handleSearch();
+            });
+            
+            attentionForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                if (!currentTrip || !currentTrip.n_viaje) {
+                    showFeedback('Debe cargar o buscar un viaje primero para registrar una atención.', 'error', formFeedback);
+                    return;
+                }
+
+                setButtonLoading(submitAttentionButton, submitBtnLoader, true);
+                showFeedback('Registrando atención...', 'loading', formFeedback);
+                
+                const now = new Date();
+                const fechaRegistro = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+                
+                const dataForSheet = {
+                    action: 'addAttention', 
+                    fecha_registro: fechaRegistro,
+                    n_viaje: currentTrip.n_viaje,
+                    tipo_registro: tipoRegistroSelect.value,
+                    motivo: motivoSelect.value,
+                    area_responsable: areaResponsableSelect.value,
+                    estado: estadoSelect.value,
+                    liquidador: liquidadorSelect.value,
+                    n_documento: formNDocumento.value.trim(),
+                    n_pedido: formNPedido.value.trim(),
+                    cliente_final: formCliente.value.trim(), 
+                    detalle: detalleTextarea.value.trim()
+                };
+
+                // Validaciones de campos OBLIGATORIOS 
+                if (!dataForSheet.tipo_registro || !dataForSheet.motivo || !dataForSheet.area_responsable || !dataForSheet.estado || !dataForSheet.liquidador) {
+                    showFeedback('Por favor, completa todos los campos obligatorios (Tipo de Registro, Motivo, Área Responsable, Estado, Liquidador).', 'error', formFeedback);
+                    setButtonLoading(submitAttentionButton, submitBtnLoader, false);
+                    return;
+                }
+
+                try {
+                    const result = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        redirect: "follow",
+                        body: JSON.stringify(dataForSheet),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" } 
+                    });
+
+                    if (!result.ok) {
+                        const errorText = await result.text();
+                        throw new Error(`Error en el servidor: ${result.status} - ${errorText}`);
+                    }
+                    
+                    const responseData = await result.json();
+
+                    if(responseData.result === 'success'){
+                        showFeedback('¡Registro guardado exitosamente!', 'success', formFeedback);
+                        attentionForm.reset(); 
+                        const historyHeaders = [ 
+                            'fecha_registro', 'n_viaje', 'tipo_registro', 'motivo', 
+                            'area_responsable', 'estado', 'liquidador', 'n_documento', 
+                            'n_pedido', 'cliente_final', 'detalle'
+                        ];
+                        if (currentTrip && currentTrip.n_viaje) {
+                             const allHistory = await fetchSheetData(HISTORY_SHEET_URL, historyHeaders);
+                             const tripHistory = allHistory.filter(record => record.n_viaje === currentTrip.n_viaje);
+                             await loadHistory(tripHistory);
+                        } else {
+                            await loadHistory([]); 
+                        }
+                    } else {
+                        throw new Error(responseData.error || 'Error desconocido desde Apps Script');
+                    }
+                } catch (err) {
+                    console.error("Error al enviar:", err);
+                    showFeedback('Error al guardar el registro. Detalles: ' + err.message, 'error', formFeedback);
+                } finally {
+                    setButtonLoading(submitAttentionButton, submitBtnLoader, false);
+                }
+            });
+
+            // Inicializar la UI al cargar la página
+            resetAllUI();
+        });
+    </script>
+</body>
+</html>
+
+
+
