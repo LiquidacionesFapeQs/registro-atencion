@@ -41,8 +41,8 @@
     <div class="max-w-7xl mx-auto bg-white shadow-lg rounded-xl p-6 sm:p-8 md:p-10">
 
         <header class="mb-8 border-b pb-4 border-gray-200">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Panel de Control de Viaje</h1>
-            <p class="text-gray-600">Busca un viaje para visualizar su historial y registrar nuevas atenciones.</p>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Control de Incidencias</h1>
+            <p class="text-gray-600">Busca un viaje para visualizar su historial y registrar nueva atencion.</p>
         </header>
 
         <!-- Sección de Búsqueda -->
@@ -62,7 +62,7 @@
                     </select>
                 </div>
                 <div>
-                    <label for="search-value" class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                    <label for="search-value" class="block text-sm font-medium text-gray-700 mb-1">Criterio de Busqueda</label>
                     <input type="text" id="search-value" name="search-value" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ingrese el valor a buscar...">
                 </div>
                 <button id="search-button" class="w-full md:w-auto flex justify-center items-center bg-blue-600 text-white py-2.5 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
@@ -113,7 +113,7 @@
                             <label for="tipo-registro" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Registro</label>
                             <select id="tipo-registro" name="tipo-registro" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
                                 <option value="">Seleccione un tipo</option>
-                                <option value="Observado">Observado</option>
+                                <option value="Incidencia">Incidencia</option>
                                 <option value="Atención">Atención</option>
                                 <option value="Seguimiento">Seguimiento</option>
                             </select>
@@ -129,7 +129,7 @@
                             <label for="area-responsable" class="block text-sm font-medium text-gray-700 mb-1">Área Responsable</label>
                             <select id="area-responsable" name="area-responsable" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
                                 <option value="">Seleccione un área</option>
-                                <option value="TI">TI</option><option value="Proyectos">Proyectos</option><option value="Despacho FP">Despacho FP</option><option value="Despacho QS">Despacho QS</option><option value="Programación">Programación</option><option value="Ejecución">Ejecución</option><option value="Liquidaciones">Liquidaciones</option><option value="Supplay te ayuda">Supplay te ayuda</option><option value="APP PH">APP PH</option><option value="Cliente">Cliente</option><option value="Transportista">Transportista</option><option value="Log. Inversa">Log. Inversa</option>
+                                <option value="IT">IT</option><option value="Proyectos">Proyectos</option><option value="Despacho FP">Despacho FP</option><option value="Despacho QS">Despacho QS</option><option value="Programación">Programación</option><option value="Ejecución">Ejecución</option><option value="Liquidaciones">Liquidaciones</option><option value="Supplay te ayuda">Supplay te ayuda</option><option value="APP PH">APP PH</option><option value="Cliente">Cliente</option><option value="Transportista">Transportista</option><option value="Log. Inversa">Log. Inversa</option>
                             </select>
                         </div>
                         <div>
@@ -141,10 +141,10 @@
                             </select>
                         </div>
                         <div>
-                            <label for="liquidador" class="block text-sm font-medium text-gray-700 mb-1">Liquidador</label>
+                            <label for="liquidador" class="block text-sm font-medium text-gray-700 mb-1">Registra</label>
                             <select id="liquidador" name="liquidador" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
-                                <option value="">Seleccione un liquidador</option>
-                                <option value="Luis">Luis</option><option value="Joel">Joel</option><option value="Darwin">Darwin</option><option value="Fabian">Fabian</option><option value="Dirk">Dirk</option><option value="Adrian">Adrian</option>
+                                <option value="">Seleccionar</option>
+                                <option value="Luigi">Luis Rios</option><option value="Joel">Joel Saens</option><option value="Darwin">Darwin Quinchuya</option><option value="Fabian">Wilder Fabian</option><option value="Dirk">Dirk Rivera</option><option value="Adrian">Adrian Vargas</option>
                             </select>
                         </div>
                         <!-- Campos no obligatorios (ahora después de los obligatorios) -->
